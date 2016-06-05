@@ -14,9 +14,9 @@ option (optBUILD_LITE	 "Build without text disassembly"      OFF)
 
 if (optHAS_OPTIMIZED)
   if (optHAS_SYMBOLS)
-    set (CMAKE_BUILD_TYPE relwithdebinfo)
+    set (CMAKE_BUILD_TYPE RelWithDebInfo)
   else (optHAS_SYMBOLS)
-    set (CMAKE_BUILD_TYPE release)
+    set (CMAKE_BUILD_TYPE Release)
   endif (optHAS_SYMBOLS)
 else (optHAS_OPTIMIZED)
   if (optHAS_SYMBOLS)
@@ -121,13 +121,20 @@ if (BEA_COMPILER STREQUAL msvc)
 		set (BEA_WARNINGS /W4)
 	endif ()
   endif ()
-  if (optHAS_SYMBOLS)
-    list (APPEND BEA_FLAGS /ZI)
-	list (APPEND BEA_DEFINITIONS "/D_DEBUG=1")
-  endif ()
+
   if (optHAS_OPTIMIZED)
     list (APPEND BEA_FLAGS /O2)
     list (APPEND BEA_DEFINITIONS "/DNDEBUG")
+  else ()
+    list (APPEND BEA_DEFINITIONS "/D_DEBUG")
+  endif ()
+
+  #generate PDB for Debug/RelWithDebInfo builds
+  if (optHAS_SYMBOLS)
+    if (optBUILD_DLL)
+      list (APPEND BEA_FLAGS /Zi)
+      set (CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG /OPT:REF,ICF")
+    endif ()
   endif ()
 
   # determine code generation model
@@ -306,7 +313,6 @@ if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
   set (CMAKE_CXX_FLAGS_DEBUG ${myCXX_FLAGS})
 endif ()
 
-
 set (BEA_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/include)
 set (BEA_SRC_ROOT ${CMAKE_SOURCE_DIR}/beaengineSources)
 
@@ -365,6 +371,10 @@ endif ()
 
 if (NOT optHAS_OPTIMIZED)
   set (BEA_TARGET "${BEA_TARGET}_d")
+endif ()
+
+if (NOT optBUILD_LITE)
+  set (BEA_TARGET "${BEA_TARGET}_l")
 endif ()
 
 if (optBUILD_STDCALL)
